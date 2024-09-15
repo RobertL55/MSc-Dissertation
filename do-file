@@ -97,10 +97,52 @@ Standard errors are presented in parentheses. * significant at 10%, * significan
 
 ****************************** Table 4 ,5 , 6 ********************************
 
+local vars marijuana other_drugs petty possession drug_abuse traffic violent
+foreach var in `vars'{
+	
+	*under 18 crime rate
+	bysort state: gen t_18_under_rate_`var' = (t_under_18_`var'/t_18_under)*1000
+	bysort state: gen m_18_under_rate_`var' = (m_under_18_`var'/m_18_under)*1000
+	bysort state: gen f_18_under_rate_`var' = (f_under_18_`var'/f_18_under)*1000
+	
+	*18-24 crime rate
+	bysort state: gen t_18_24_`var' = t_18_20_`var' +  t_21_24_`var'
+	bysort state: gen m_18_24_`var' = m_18_20_`var' +  m_21_24_`var'
+	bysort state: gen f_18_24_`var' = f_18_20_`var' +  f_21_24_`var'
+
+        * Gen Population state
+	bysort state: gen t_18_24 = pop - t_under_18 - t_over_25
+	bysort state: gen m_18_24 = f_pop - m_under_18 - m_over_25
+	bysort state: gen f_18_24 = m_pop - f_under_18 - f_over_25
+	
+	bysort state: gen t_18_24_rate_`var' = (t_18_24_`var'/t_18_24)*1000
+	bysort state: gen m_18_24_rate_`var' = (m_18_24_`var'/m_18_24)*1000
+	bysort state: gen f_18_24_rate_`var' = (f_18_24_`var'/f_18_24)*1000
+	
+	*Over 25 crime rate	
+	bysort state: gen t_25over_rate_`var' = (t_over_25_`var'/t_over_25)*1000
+	bysort state: gen m_25over_rate_`var' = (m_over_25_`var'/m_over_25)*1000
+	bysort state: gen f_25over_rate_`var' = (f_over_25_`var'/f_over_25)*1000
+}
+
+**Log values
+
+
+local vars t_18_under_rate* m_18_under_rate* f_18_under_rate* t_18_24_rate* ///
+           m_18_24_rate* f_18_24_rate* t_25over_rate* m_25over_rate* f_25over_rate*
+
+foreach var of varlist `vars' {
+    gen log_`var' = log(`var')
+    drop `var'
+    rename log_`var' `var'
+}
+
+
+
 global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca  mml dml 
 
 local age 18_under 18_24 25over
-local i = 5
+local i = 4
 foreach a in `age'{
 eststo clear
 
@@ -308,7 +350,7 @@ foreach i of varlist `transform'{
 
 
 local age 18_24 25over
-local i = 8
+local i = 7
 foreach a in `age'{
 eststo clear
 
@@ -358,7 +400,7 @@ matrix V32 = e(V)
 
 esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
 stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
-title(Table 5: Overall arrests rates on age groups of different crimes \par Marijuana Arrests) nomtitles ///
+title(Table 7: Arrest Ratios of Young Adults (18 - 24 Years) \par Marijuana Arrests) nomtitles ///
 collabels("") varlabels (ATT "RML") ///
 mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
 
@@ -489,7 +531,7 @@ local i = `i' + 1
 } 
 
 
-****************************Table 9 - 10***********************************
+****************************Table 9 - 10 ***********************************
 
 
 global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca mml dml 
@@ -498,7 +540,7 @@ replace first_treat_y = first_treat + 3
 replace first_treat_y = 0 if first_treat_y==3
 
 local age 18_24 25over
-local i = 8
+local i = 9
 foreach a in `age'{
 eststo clear
 
@@ -548,7 +590,7 @@ matrix V32 = e(V)
 
 esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
 stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
-title(Table 5: Overall arrests rates on age groups of different crimes \par Marijuana Arrests) nomtitles ///
+title(Table 9: Placebo Test for Arrest Rates of Young Adults (18 - 24 Years) \par Marijuana Arrests) nomtitles ///
 collabels("") varlabels (ATT "RML") ///
 mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
 
