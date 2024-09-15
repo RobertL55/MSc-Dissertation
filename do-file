@@ -1,5 +1,11 @@
 ********************* Event Study Figures ***********************
 
+cd "/Users/robert/Documents/Masters/Diss _2"
+
+use transformed_vars.dta, replace
+
+global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca  mml dml 
+
 csdid arrest_rate $controls, ///
 ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
 estat event, window(-7,3)
