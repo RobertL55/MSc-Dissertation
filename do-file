@@ -97,6 +97,7 @@ Standard errors are presented in parentheses. * significant at 10%, * significan
 
 ****************************** Table 4 ,5 , 6 ********************************
 
+***Gen Arrest Rates
 local vars marijuana other_drugs petty possession drug_abuse traffic violent
 foreach var in `vars'{
 	
@@ -109,11 +110,6 @@ foreach var in `vars'{
 	bysort state: gen t_18_24_`var' = t_18_20_`var' +  t_21_24_`var'
 	bysort state: gen m_18_24_`var' = m_18_20_`var' +  m_21_24_`var'
 	bysort state: gen f_18_24_`var' = f_18_20_`var' +  f_21_24_`var'
-
-        * Gen Population state
-	bysort state: gen t_18_24 = pop - t_under_18 - t_over_25
-	bysort state: gen m_18_24 = f_pop - m_under_18 - m_over_25
-	bysort state: gen f_18_24 = m_pop - f_under_18 - f_over_25
 	
 	bysort state: gen t_18_24_rate_`var' = (t_18_24_`var'/t_18_24)*1000
 	bysort state: gen m_18_24_rate_`var' = (m_18_24_`var'/m_18_24)*1000
@@ -589,7 +585,7 @@ matrix V32 = e(V)
 
 
 esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
-stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
 title(Table 9: Placebo Test for Arrest Rates of Young Adults (18 - 24 Years) \par Marijuana Arrests) nomtitles ///
 collabels("") varlabels (ATT "RML") ///
 mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
@@ -649,7 +645,7 @@ matrix V32 = e(V)
 
 *Esttab
 esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
-stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ///
 title(Panel B: Other Drug Arrests) nomtitles ///
 collabels("") varlabels (ATT "RML") ///
 append
@@ -707,7 +703,7 @@ matrix V32 = e(V)
 
 *Esttab 
 esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
-stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
 title(Panel G: Traffic Arrests) nomtitles ///
 collabels("") varlabels (ATT "RML") ///
 note(Each people is arrest rate per 1,000 people for the given population. All regressions are TWFE models using the ///
