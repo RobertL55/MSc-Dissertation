@@ -1,0 +1,695 @@
+********************* Event Study Figures ***********************
+
+csdid arrest_rate $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat event, window(-7,3)
+csdid_plot, style(rcap) xtitle("Years relative to RML") ytitle("Arrest rate per 1,000") ///
+    xline(-0.5, lwidth(thin) lcolor(black) lpattern(solid)) xlabel(-8(1)3) ///
+	legend(on label(2 "Pre") label(4 "Post") order(2 4)) ///
+	plotregion(margin(zero)) graphregion(color(white))
+
+graph export "figure2.png", width(1200) replace
+
+csdid arrest_rate_m $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat event, window(-7,5)
+csdid_plot, style(rcap) xtitle("Years relative to RML") ytitle("Arrest rate per 1,000") ///
+    xline(-0.5, lwidth(thin) lcolor(black) lpattern(solid)) xlabel(-8(1)5) ///
+	legend(on label(2 "Pre") label(4 "Post") order(2 4)) ///
+	plotregion(margin(zero)) graphregion(color(white))
+
+graph export "figure3i.png", width(1200) replace
+
+csdid arrest_rate_f $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat event,window(-7,5)
+csdid_plot, style(rcap) xtitle("Years relative to RML") ytitle("Arrest rate per 1,000") ///
+    xline(-0.5, lwidth(thin) lcolor(black) lpattern(solid)) xlabel(-8(1)5) ///
+	legend(on label(2 "Pre") label(4 "Post") order(2 4)) ///
+	plotregion(margin(zero)) graphregion(color(white))
+	
+graph export "figure3ii.png", width(1200) replace
+
+
+
+****************************** Table 3 ********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"
+
+use transformed_vars.dta, replace
+
+global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca  mml dml 
+*Set panel
+
+xtset state year
+
+*Arrest rates generate
+bysort state: gen arrest_rate = (crime_count_t/pop)*1000
+bysort state: gen arrest_rate_m = (crime_count_m/m_pop)*1000
+bysort state: gen arrest_rate_f = (crime_count_f/f_pop)*1000
+
+
+local vars arrest_rate arrest_rate_m arrest_rate_f gdp
+
+foreach var in `vars'{
+	gen `var'_ln = log(`var')
+	drop `var'
+	rename `var'_ln `var'
+}
+
+
+*Total Arrest Rate
+eststo b1: xtreg arrest_rate rml $controls, fe vce(cluster state)
+estadd local SF "YES"
+estadd local YF "NO"
+estadd local CF "YES"
+
+*Male Arrest rate
+eststo b2: xtreg arrest_rate_m rml $controls, fe vce(cluster state)
+estadd local SF "YES"
+estadd local YF "YES"
+estadd local CF "YES"
+
+*Female Arrest Rate
+eststo b2: xtreg arrest_rate_f rml $controls, fe vce(cluster state)
+estadd local SF "YES"
+estadd local YF "YES"
+estadd local CF "YES"
+
+
+esttab b1 b2 b3 using table3.rtf, replace compress nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(YF SF CF N r2 F p, labels("Year FE" "State FE" "Controls" "Observations" "R^2" "F Statistics" ///
+"P Value") fmt(%9.0g %9.0g %9.0g %9.0g %9.4f %9.4f %9.4f)) /// 
+title(Table 3 \par Baseline Regression of RML on Arrest Rate) nomtitles ///
+collabels("") varlabels(ATT "RML" rml "RML" mml "MML" dml "MDL" gdp "Log GDP (Billions)" umployment ///
+"Unemployment (%)" median_age "Median Age"  unshelter_homeless_rate "Unshelter homeless per 1000" ///
+aca "Affordable Healthcare Act" sex_ratio "Sex Ratio" _cons "Intercept") ///
+keep(ATT rml  mml dml  gdp employment pov_0_17 unshelter_homeless_rate median_household_income sex_ratio aca _cons) ///
+order(ATT rml  gdp employment pov_0_17 unshelter_homeless_rate median_household_income sex_ratio aca mml dml _cons) ///
+mgroups("FE Model" "TWFE Model") ///
+note(Column (1) is a state FE model and Column (2) is a TWFE model using the Callaway and Sant'Anna [2021] estimator. /// 
+Crime rate reported per 1,000 for the given population. ///
+Alabama, Florida and South Dakota were removed from all regressions because of inconsistencies and lack of observations. ///
+Standard errors are presented in parentheses. * significant at 10%, * significant at 5%, and ** significant at 1%.)
+
+
+
+
+
+****************************** Table 4 ,5 , 6 ********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"
+
+use transformed_vars.dta, replace
+
+global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca  mml dml 
+
+local age 18_under 18_24 25over
+local i = 5
+foreach a in `age'{
+eststo clear
+
+************* Marijuana ****************
+csdid t_`a'_rate_marijuana $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)  
+
+csdid m_`a'_rate_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_rate_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Table 5: Overall arrests rates on age groups of different crimes \par Marijuana Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
+
+
+***All other crimes
+local crime other_drugs possession drug_abuse petty violent
+foreach j in `crime'{
+
+
+eststo clear
+
+csdid t_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+
+csdid f_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Panel B: Other Drug Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+append
+	
+}
+
+
+
+*****Traffic*****
+
+eststo clear
+
+csdid t_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)): b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)): b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab 
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Panel G: Traffic Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+note(Each people is arrest rate per 1,000 people for the given population. All regressions are TWFE models using the ///
+Callaway and Sant'Anna [2021] estimator. ///
+Alabama, Florida, South Dakota, Wiscosin and Wyoming were removed from all regressions because of inconsistencies and lack of observations. ///
+Standard errors are presented in parentheses. * significant at 10%, ** significant at 5%, and *** significant at 1%.) ///
+append
+
+
+local i = `i' + 1
+} 
+
+*********************Tables 7 & 8 ************************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"
+
+
+use transformed_vars.dta, replace
+
+global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca mml dml 
+
+**Gen arrest ratios
+
+local vars marijuana other_drugs petty possession drug_abuse traffic violent
+foreach var in `vars'{
+	gen t_18_24_ratio_`var' = (t_18_24_`var'/crime_count_t_18_24) * 100
+	gen m_18_24_ratio_`var' = (m_18_24_`var'/crime_count_m_18_24) * 100
+	gen f_18_24_ratio_`var' = (f_18_24_`var'/crime_count_f_18_24) * 100
+	
+	gen t_25over_ratio_`var' = (t_over_25_`var'/crime_count_t_over25) * 100
+	gen m_25over_ratio_`var' = (m_over_25_`var'/crime_count_m_over25) * 100
+	gen f_25over_ratio_`var' = (f_over_25_`var'/crime_count_f_over25) * 100
+	
+}
+
+*Log transform all arrest rates
+local transform t_18_24_ratio* m_18_24_ratio*  f_18_24_ratio*  t_25over_ratio* m_25over_ratio* f_25over_ratio*
+foreach i of varlist `transform'{
+	gen `i'_l = log(`i')
+	drop `i'
+	rename `i'_l `i'
+}
+
+
+local age 18_24 25over
+local i = 8
+foreach a in `age'{
+eststo clear
+
+************* Marijuana ****************
+csdid t_`a'_ratio_marijuana $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)  
+
+csdid m_`a'_ratio_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_ratio_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Table 5: Overall arrests rates on age groups of different crimes \par Marijuana Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
+
+
+***All other crimes
+local crime other_drugs possession drug_abuse petty violent
+foreach j in `crime'{
+
+
+eststo clear
+
+csdid t_`a'_ratio_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_ratio_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+
+csdid f_`a'_ratio_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Panel B: Other Drug Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+append
+	
+}
+
+
+
+*****Traffic*****
+
+eststo clear
+
+csdid t_`a'_ratio_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_ratio_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)): b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)): b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab 
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.3f %9.0g %9.0g %9.0g) ) ///
+title(Panel G: Traffic Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+note(Each people is arrest rate per 1,000 people for the given population. All regressions are TWFE models using the ///
+Callaway and Sant'Anna [2021] estimator. ///
+Alabama, Florida, South Dakota, Wiscosin and Wyoming were removed from all regressions because of inconsistencies and lack of observations. ///
+Standard errors are presented in parentheses. * significant at 10%, ** significant at 5%, and *** significant at 1%.) ///
+append
+
+
+local i = `i' + 1
+} 
+
+
+****************************Table 9 - 10***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"
+
+use transformed_vars.dta, replace
+
+global controls gdp employment unshelter_homeless_rate sex_ratio median_age aca mml dml 
+
+replace first_treat_y = first_treat + 3
+replace first_treat_y = 0 if first_treat_y==3
+
+local age 18_24 25over
+local i = 8
+foreach a in `age'{
+eststo clear
+
+************* Marijuana ****************
+csdid t_`a'_rate_marijuana $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)  
+
+csdid m_`a'_rate_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_rate_marijuana $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+esttab b1 b2 b3 using table`i'.rtf, replace nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+title(Table 5: Overall arrests rates on age groups of different crimes \par Marijuana Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+mgroups("Total Arrest Rate" "Male Arrest Rate" "Female Arrest Rate", pattern(1 1 1)) ///
+
+
+***All other crimes
+local crime other_drugs possession drug_abuse petty violent
+foreach j in `crime'{
+
+
+eststo clear
+
+csdid t_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+
+csdid f_`a'_rate_`j' $controls , ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_total)):b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_sex = 2 * normal(-abs(z_female_total)):b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_sex = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+title(Panel B: Other Drug Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+append
+	
+}
+
+
+
+*****Traffic*****
+
+eststo clear
+
+csdid t_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b1) save
+matrix b11 = e(b)   
+matrix V12 = e(V)
+
+csdid m_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b2) save
+matrix b21 = e(b)   
+matrix V22 = e(V)  
+
+csdid f_`a'_rate_traffic $controls, ///
+ivar(state) time(year) gvar(first_treat_y) method(reg) vce(cluster state) xcov(i.state i.year)
+estat simple, estore(b3) save
+matrix b31 = e(b)   
+matrix V32 = e(V)  
+
+******Z Test********
+    * Test for differences between total and males
+    matrix b_diff_male_total = b11 - b21
+    matrix V_diff_male_total = V12 + V22
+    scalar se_diff_male_total = sqrt(V_diff_male_total[1,1])
+    scalar z_male_total = b_diff_male_total[1,1] / se_diff_male_total
+    estadd scalar p_value_s = 2 * normal(-abs(z_male_total)): b1
+
+
+    * Test for differences between total and females
+    matrix b_diff_female_total = b11 - b31
+    matrix V_diff_female_total = V12 + V32
+    scalar se_diff_female_total = sqrt(V_diff_female_total[1,1])
+    scalar z_female_total = b_diff_female_total[1,1] / se_diff_female_total
+    estadd scalar p_value_s = 2 * normal(-abs(z_female_total)): b2
+  
+
+    * Test for differences between males and females
+    matrix b_diff_male_female = b21 - b31
+    matrix V_diff_male_female = V22 + V32
+    scalar se_diff_male_female = sqrt(V_diff_male_female[1,1])
+    scalar z_male_female = b_diff_male_female[1,1] / se_diff_male_female
+    estadd scalar p_value_s = 2 * normal(-abs(z_male_female)): b3
+
+
+*Esttab 
+esttab b1 b2 b3 using table`i'.rtf, nogap b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) ///
+stats(p_value_sex Y S C N, labels( "P Value" "Year FE" "State FE" "Controls" "Observations") fmt(%9.0g %9.0g %9.0g %9.0g) ) ///
+title(Panel G: Traffic Arrests) nomtitles ///
+collabels("") varlabels (ATT "RML") ///
+note(Each people is arrest rate per 1,000 people for the given population. All regressions are TWFE models using the ///
+Callaway and Sant'Anna [2021] estimator. ///
+Alabama, Florida, South Dakota, Wiscosin and Wyoming were removed from all regressions because of inconsistencies and lack of observations. ///
+Standard errors are presented in parentheses. * significant at 10%, ** significant at 5%, and *** significant at 1%.) ///
+append
+
+
+local i = `i' + 1
+} 
+
+
+
