@@ -724,8 +724,6 @@ local i = `i' + 1
 
 ************************* Total Marijuana - Young Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2"  // 
-
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
 * Set Seed
@@ -797,7 +795,6 @@ graph export "figure4i.png", width(1200) replace
 
 ************************* Male Marijuana - Young  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -869,7 +866,6 @@ graph export "figure4ii.png", width(1200) replace
 
 ************************* Female Marijuana -  Young  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -941,7 +937,6 @@ graph export "figure4iii.png", width(1200) replace
 
 ************************* Total Marijuana -  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1014,8 +1009,6 @@ graph export "figure5i.png", width(1200) replace
 
 ************************* Male Marijuana -  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
-
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
 * Set Seed
@@ -1085,8 +1078,6 @@ twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, wi
 graph export "figure5ii.png", width(1200) replace
 
 ************************* Feale Marijuana -  Adults ***********************************
-
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1161,7 +1152,6 @@ graph export "figure5iii.png", width(1200) replace
 
 ************************* Total Other Drug - Young Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2"  // 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1234,7 +1224,6 @@ graph export "figure6i.png", width(1200) replace
 
 ************************* Male Other Drugs - Young  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1306,7 +1295,6 @@ graph export "figure6ii.png", width(1200) replace
 
 ************************* Female Other Drugs -  Young  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1378,7 +1366,6 @@ graph export "figure6iii.png", width(1200) replace
 
 ************************* Total Other drugs -  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1451,7 +1438,6 @@ graph export "figure7i.png", width(1200) replace
 
 ************************* Male Other Drugs -  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
@@ -1523,7 +1509,6 @@ graph export "figure7ii.png", width(1200) replace
 
 ************************* Female Marijuana -  Adults ***********************************
 
-cd "/Users/robert/Documents/Masters/Diss _2" 
 
 global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
 
