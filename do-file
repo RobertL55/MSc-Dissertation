@@ -717,4 +717,884 @@ local i = `i' + 1
 } 
 
 
+*****************************************************************************************************************************
+************************************ Monte Carlo *************************************************************************
+*****************************************************************************************************************************
+
+
+************************* Total Marijuana - Young Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"  // 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57 // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid t_18_24_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.932) xtitle("Regression coefficient estimation for Total Young Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure4i.png", width(1200) replace
+
+
+************************* Male Marijuana - Young  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid m_18_24_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.932) xtitle("Regression coefficient estimation for Male Young Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure4ii.png", width(1200) replace
+
+************************* Female Marijuana -  Young  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid f_18_24_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.845) xtitle("Regression coefficient estimation for Female Young Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure4iii.png", width(1200) replace
+
+************************* Total Marijuana -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid t_25over_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-1.358) xtitle("Regression coefficient estimation for Total Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-2(0.4)2)
+
+graph export "figure5i.png", width(1200) replace
+
+
+************************* Male Marijuana -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid m_25over_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-1.370) xtitle("Regression coefficient estimation for Male Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-2(0.4)2)
+
+graph export "figure5ii.png", width(1200) replace
+
+************************* Feale Marijuana -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57 // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid f_25over_rate_marijuana $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-1.421) xtitle("Regression coefficient estimation for Female Adult Marijuana Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-2(0.4)2)
+
+graph export "figure5iii.png", width(1200) replace
+
+
+
+
+************************* Total Other Drug - Young Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2"  // 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57 // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid t_18_24_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.648) xtitle("Regression coefficient estimation for Total Young Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure6i.png", width(1200) replace
+
+
+************************* Male Other Drugs - Young  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid m_18_24_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.634) xtitle("Regression coefficient estimation for Male Young Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure6ii.png", width(1200) replace
+
+************************* Female Other Drugs -  Young  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid f_18_24_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.166) xtitle("Regression coefficient estimation for Female Young Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure6iii.png", width(1200) replace
+
+************************* Total Other drugs -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid t_25over_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.321) xtitle("Regression coefficient estimation for Total Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure7i.png", width(1200) replace
+
+
+************************* Male Other Drugs -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57  // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid m_25over_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.323) xtitle("Regression coefficient estimation for Male Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure7ii.png", width(1200) replace
+
+************************* Female Marijuana -  Adults ***********************************
+
+cd "/Users/robert/Documents/Masters/Diss _2" 
+
+global controls mml dml unshelter_homeless_rate sex_ratio median_age aca gdp employment
+
+* Set Seed
+set seed 12345
+
+* Close prior file
+capture postclose savefile
+
+* Save all iterations
+tempfile savefile
+postfile savefile _b_random_first_treat_y _se_random_first_treat_y using simulation_results.dta, replace
+
+* 1000 Iterations
+forvalues i = 1/1000 {
+    use "monte_experi.dta", clear
+    gen obs_id = _n 
+
+    * Randomly select states for treatment (43% treated)
+    by state, sort: gen random_treat = 0  // Initialize with 0 (never treated)
+    by state: gen random = runiform()     // Random number
+    by state: replace random_treat = 1 if random > 0.57 // 43% receive treatment
+    by state: replace random_treat = random_treat[1]       // All have same treatment
+
+    * Assign a random treatment date to each state
+    by state, sort: gen random_first_treat_y = 0  // Initialize with 0 (never treated)
+    by state: replace random_first_treat_y = 2013 + floor(7 * runiform()) if random_treat == 1  // Random year after 2013
+    by state: replace random_first_treat_y = random_first_treat_y[1]  // Constant treatment year
+
+    * Remove treatment date if not selected
+    by state: replace random_first_treat_y = 0 if random_treat == 0
+
+    * Save random treatment date
+    tempfile newdata
+    save `newdata', replace
+
+    * Reload original data and add random treatment dates
+    use "monte_experi.dta", clear
+    gen obs_id = _n  
+    merge 1:1 obs_id using `newdata', nogen
+
+    * Run the csdid command with randomly assigned treatment
+    csdid f_25over_rate_other_drugs $controls, ///
+        ivar(state) time(year) gvar(random_first_treat_y) method(reg) ///
+        vce(cluster state) xcov(i.state i.year)
+
+   * Extract the coefficient and standard error from the estimation results
+    matrix b = e(b)    // Obtain the coefficient vector
+    matrix V = e(V)    // Obtain the variance-covariance matrix
+    scalar _b_random_first_treat_y = b[1, 1]  // Obtain coefficient for random treatment
+    scalar _se_random_first_treat_y = sqrt(V[1, 1])  // Obtain standard error for random treatment
+
+    * Save the results
+    post savefile (_b_random_first_treat_y) (_se_random_first_treat_y)
+}
+
+* Close the postfile 
+postclose savefile
+
+* Load all results
+use "simulation_results.dta", clear
+
+* Kernel density estimate and histogram for the ATT
+twoway (kdensity _b_random_first_treat_y) (histogram _b_random_first_treat_y, width(0.01)), ///
+    xline(-0.049) xtitle("Regression coefficient estimation for Female Adult Other Drug Arrest Rate") ///
+    ytitle("Density") title("Monte Carlo Simulation Results") xlabel(-1(0.2)1)
+
+graph export "figure7iii.png", width(1200) replace
+
+
+
+
+
 
